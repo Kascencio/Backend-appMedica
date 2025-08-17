@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PATIENT
+  CAREGIVER
+}
+
+enum PermissionLevel {
+  READ
+  WRITE
+  ADMIN
+}
+
+enum PermissionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum IntakeKind {
+  MED
+  TRT
+}
+
+enum IntakeAction {
+  TAKEN
+  SNOOZE
+  SKIPPED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  passwordHash  String
+  role          Role
+  createdAt     DateTime        @default(now())
+  patientProfile PatientProfile?
+  caregiverPermissions Permission[] @relation("CaregiverPermissions")
+  pushSubscriptions PushSubscription[]
+}
+
+model PatientProfile {
+  id            String        @id @default(cuid())
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id])
+  name          String?
+  age           Int?
+  weight        Float?
+  height        Float?
+  allergies     String?
+  reactions     String?
+  doctorName    String?
+  doctorContact String?
+  photoUrl      String?
+
+  medications   Medication[]
+  medicationSchedules MedicationSchedule[]
+  appointments  Appointment[]
+  treatments    Treatment[]
+  treatmentReminders TreatmentReminder[]
+  permissions   Permission[]  @relation("PatientPermissions")
+  intakeEvents  IntakeEvent[]
+  inviteCodes   InviteCode[]
+}
+
+model Permission {
+  id               String            @id @default(cuid())
+  patientProfileId String
+  caregiverId      String
+  level            PermissionLevel   @default(READ)
+  status           PermissionStatus  @default(PENDING)
+
+  patientProfile   PatientProfile    @relation("PatientPermissions", fields: [patientProfileId], references: [id])
+  caregiver        User              @relation("CaregiverPermissions", fields: [caregiverId], references: [id])
+
+  @@unique([patientProfileId, caregiverId])
+}
+
+model InviteCode {
+  id               String   @id @default(cuid())
+  patientProfileId String
+  code             String   @unique
+  expiresAt        DateTime
+  used             Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+}
+
+model Medication {
+  id               String   @id @default(cuid())
+  patientProfileId String
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+  name             String
+  dosage           String?
+  type             String?
+  frequency        String   // "once"|"daily"|"weekly"|"custom"
+  startDate        DateTime
+  endDate          DateTime?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  schedules        MedicationSchedule[]
+
+  @@index([patientProfileId])
+}
+
+model MedicationSchedule {
+  id            String   @id @default(cuid())
+  patientProfileId String
+  medicationId  String
+  frequency     String
+  times         Json     // ["HH:mm", ...]
+  daysOfWeek    Json?    // [0..6]
+  customRule    Json?
+  timezone      String   // TZ para cálculos
+
+  medication    Medication     @relation(fields: [medicationId], references: [id])
+  patientProfile PatientProfile @relation(fields: [patientProfileId], references: [id])
+
+  @@index([medicationId])
+}
+
+model Treatment {
+  id               String   @id @default(cuid())
+  patientProfileId String
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+  title            String
+  description      String?
+  startDate        DateTime
+  endDate          DateTime?
+  progress         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  reminders        TreatmentReminder[]
+}
+
+model TreatmentReminder {
+  id               String   @id @default(cuid())
+  patientProfileId String
+  treatmentId      String
+  frequency        String
+  times            Json
+  daysOfWeek       Json?
+  timezone         String
+
+  treatment        Treatment      @relation(fields: [treatmentId], references: [id])
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+}
+
+model Appointment {
+  id               String   @id @default(cuid())
+  patientProfileId String
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+  title            String
+  description      String?
+  dateTime         DateTime
+  location         String?
+  status           AppointmentStatus @default(SCHEDULED)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([patientProfileId, dateTime])
+}
+
+model IntakeEvent {
+  id           String       @id @default(cuid())
+  kind         IntakeKind
+  refId        String       // medication.id o treatment.id
+  patientProfileId String
+  scheduledFor DateTime
+  action       IntakeAction
+  at           DateTime     @default(now())
+  meta         Json?
+  patientProfile PatientProfile @relation(fields: [patientProfileId], references: [id])
+
+  @@index([patientProfileId, scheduledFor])
+}
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  userId       String
+  endpoint     String   @unique
+  p256dh       String
+  auth         String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
