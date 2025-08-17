@@ -10,11 +10,10 @@ export default fp(async (app) => {
   });
 });
 
+// Extiende solo FastifyInstance
+import type { FastifyRequest } from 'fastify';
 declare module 'fastify' {
   interface FastifyInstance {
     auth: any;
-  }
-  interface FastifyRequest {
-    user: { id: string; role: 'PATIENT'|'CAREGIVER' };
   }
 }

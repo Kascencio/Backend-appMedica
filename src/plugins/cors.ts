@@ -9,7 +9,7 @@ export default fp(async (app) => {
       if (!origin) return cb(null, true); // apps nativas
       if (origins.length === 0) return cb(null, true);
       if (origins.includes(origin)) return cb(null, true);
-      cb(new Error('CORS not allowed'));
+      cb(new Error('CORS not allowed'), false);
     },
     credentials: true
   });

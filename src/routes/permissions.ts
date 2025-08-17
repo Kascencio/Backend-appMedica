@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../plugins/prisma.js';
 
@@ -24,7 +24,11 @@ const router: FastifyPluginAsync = async (app) => {
     const perm = await prisma.permission.findUnique({ where: { id }, include: { patientProfile: true } });
     if (!perm || perm.patientProfile.userId !== req.user.id) return res.code(403).send({ error: 'NO_ACCESS' });
 
-    const updated = await prisma.permission.update({ where: { id }, data: { level, status } });
+    const data: any = {};
+    if (level !== undefined) data.level = level;
+    if (status !== undefined) data.status = status;
+
+    const updated = await prisma.permission.update({ where: { id }, data });
     return updated;
   });
 };

@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../plugins/prisma.js';
 
@@ -28,10 +28,22 @@ const router: FastifyPluginAsync = async (app) => {
     }).parse(req.body);
 
     const existing = await prisma.patientProfile.findFirst({ where: { userId: req.user.id } });
+    const data = {
+      name: body.name ?? null,
+      age: body.age ?? null,
+      weight: body.weight ?? null,
+      height: body.height ?? null,
+      allergies: body.allergies ?? null,
+      reactions: body.reactions ?? null,
+      doctorName: body.doctorName ?? null,
+      doctorContact: body.doctorContact ?? null,
+      photoUrl: body.photoUrl ?? null,
+      userId: req.user.id
+    };
     const updated = await prisma.patientProfile.upsert({
       where: { id: existing?.id ?? '' },
-      create: { userId: req.user.id, ...body },
-      update: { ...body }
+      create: data,
+      update: data
     });
     return updated;
   });

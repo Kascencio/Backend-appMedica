@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../plugins/prisma.js';
 import { parsePagination, buildMeta } from '../utils/pagination.js';
@@ -68,12 +68,12 @@ const router: FastifyPluginAsync = async (app) => {
         data: {
           patientProfileId: body.patientProfileId,
           name: body.name,
-          dosage: body.dosage,
-          type: body.type,
+          dosage: body.dosage ?? null,
+          type: body.type ?? null,
           frequency: body.frequency,
           startDate: new Date(body.startDate),
           endDate: body.endDate ? new Date(body.endDate) : null,
-          notes: body.notes
+          notes: body.notes ?? null
         }
       });
       if (body.schedule) {
@@ -83,7 +83,7 @@ const router: FastifyPluginAsync = async (app) => {
             medicationId: med.id,
             frequency: body.schedule.frequency,
             times: body.schedule.times,
-            daysOfWeek: body.schedule.daysOfWeek ?? null,
+            ...(body.schedule.daysOfWeek !== undefined ? { daysOfWeek: body.schedule.daysOfWeek } : {}),
             customRule: body.schedule.customRule ?? null,
             timezone: body.schedule.timezone
           }
@@ -118,31 +118,32 @@ const router: FastifyPluginAsync = async (app) => {
 
     if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE'))) return res.code(403).send({ error: 'NO_ACCESS' });
 
+    const medData: any = {};
+    if ('name' in body) medData.name = body.name;
+    if ('dosage' in body) medData.dosage = body.dosage ?? null;
+    if ('type' in body) medData.type = body.type ?? null;
+    if ('frequency' in body) medData.frequency = body.frequency;
+    if ('startDate' in body) medData.startDate = body.startDate ? new Date(body.startDate) : undefined;
+    if ('endDate' in body) medData.endDate = body.endDate ? new Date(body.endDate) : null;
+    if ('notes' in body) medData.notes = body.notes ?? null;
+
     const updated = await prisma.$transaction(async (tx) => {
       const med = await tx.medication.update({
         where: { id },
-        data: {
-          ...('name' in body ? { name: body.name } : {}),
-          ...('dosage' in body ? { dosage: body.dosage } : {}),
-          ...('type' in body ? { type: body.type } : {}),
-          ...('frequency' in body ? { frequency: body.frequency } : {}),
-          ...('startDate' in body ? { startDate: body.startDate ? new Date(body.startDate) : undefined } : {}),
-          ...('endDate' in body ? { endDate: body.endDate ? new Date(body.endDate) : null } : {}),
-          ...('notes' in body ? { notes: body.notes } : {})
-        }
+        data: medData
       });
       if (body.schedule) {
         const existing = await tx.medicationSchedule.findFirst({ where: { medicationId: id } });
+        const schedData: any = {};
+        if ('frequency' in body.schedule) schedData.frequency = body.schedule.frequency;
+        if ('times' in body.schedule) schedData.times = body.schedule.times;
+        if ('daysOfWeek' in body.schedule) Object.assign(schedData, body.schedule.daysOfWeek !== undefined ? { daysOfWeek: body.schedule.daysOfWeek } : {});
+        if ('customRule' in body.schedule) schedData.customRule = body.schedule.customRule ?? null;
+        if ('timezone' in body.schedule) schedData.timezone = body.schedule.timezone;
         if (existing) {
           await tx.medicationSchedule.update({
             where: { id: existing.id },
-            data: {
-              ...('frequency' in body.schedule ? { frequency: body.schedule.frequency } : {}),
-              ...('times' in body.schedule ? { times: body.schedule.times } : {}),
-              ...('daysOfWeek' in body.schedule ? { daysOfWeek: body.schedule.daysOfWeek ?? null } : {}),
-              ...('customRule' in body.schedule ? { customRule: body.schedule.customRule ?? null } : {}),
-              ...('timezone' in body.schedule ? { timezone: body.schedule.timezone! } : {})
-            }
+            data: schedData
           });
         } else {
           await tx.medicationSchedule.create({
@@ -151,7 +152,7 @@ const router: FastifyPluginAsync = async (app) => {
               medicationId: id,
               frequency: body.schedule.frequency ?? 'daily',
               times: body.schedule.times ?? [],
-              daysOfWeek: body.schedule.daysOfWeek ?? null,
+              ...(body.schedule.daysOfWeek !== undefined ? { daysOfWeek: body.schedule.daysOfWeek } : {}),
               customRule: body.schedule.customRule ?? null,
               timezone: body.schedule.timezone ?? 'UTC'
             }

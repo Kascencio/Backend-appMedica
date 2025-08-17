@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../plugins/prisma.js';
 import { parsePagination, buildMeta } from '../utils/pagination.js';
@@ -49,7 +49,14 @@ const router: FastifyPluginAsync = async (app) => {
     if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE'))) return res.code(403).send({ error: 'NO_ACCESS' });
 
     const created = await prisma.appointment.create({
-      data: { ...body, dateTime: new Date(body.dateTime) }
+      data: {
+        patientProfileId: body.patientProfileId,
+        title: body.title,
+        description: body.description ?? null,
+        dateTime: new Date(body.dateTime),
+        location: body.location ?? null,
+        status: body.status ?? 'SCHEDULED'
+      }
     });
     return res.code(201).send(created);
   });
@@ -67,15 +74,16 @@ const router: FastifyPluginAsync = async (app) => {
 
     if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE'))) return res.code(403).send({ error: 'NO_ACCESS' });
 
+    const data: any = {};
+    if (body.title !== undefined) data.title = body.title;
+    if (body.description !== undefined) data.description = body.description ?? null;
+    if (body.location !== undefined) data.location = body.location ?? null;
+    if (body.status !== undefined) data.status = body.status;
+    if (body.dateTime !== undefined) data.dateTime = new Date(body.dateTime);
+
     const updated = await prisma.appointment.update({
       where: { id },
-      data: {
-        ...('title' in body ? { title: body.title } : {}),
-        ...('description' in body ? { description: body.description } : {}),
-        ...('location' in body ? { location: body.location } : {}),
-        ...('status' in body ? { status: body.status } : {}),
-        ...('dateTime' in body ? { dateTime: body.dateTime ? new Date(body.dateTime) : undefined } : {})
-      }
+      data
     });
     return updated;
   });

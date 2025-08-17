@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../plugins/prisma.js';
 import { parsePagination, buildMeta } from '../utils/pagination.js';
@@ -56,10 +56,10 @@ const router: FastifyPluginAsync = async (app) => {
         data: {
           patientProfileId: body.patientProfileId,
           title: body.title,
-          description: body.description,
+          description: body.description ?? null,
           startDate: new Date(body.startDate),
           endDate: body.endDate ? new Date(body.endDate) : null,
-          progress: body.progress
+          progress: body.progress ?? null
         }
       });
       if (body.reminders) {
@@ -70,7 +70,7 @@ const router: FastifyPluginAsync = async (app) => {
               treatmentId: trt.id,
               frequency: r.frequency,
               times: r.times,
-              daysOfWeek: r.daysOfWeek ?? null,
+              ...(r.daysOfWeek !== undefined ? { daysOfWeek: r.daysOfWeek } : {}),
               timezone: r.timezone
             }
           });
@@ -95,15 +95,16 @@ const router: FastifyPluginAsync = async (app) => {
 
     if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE'))) return res.code(403).send({ error: 'NO_ACCESS' });
 
+    const data: any = {};
+    if (body.title !== undefined) data.title = body.title;
+    if (body.description !== undefined) data.description = body.description ?? null;
+    if (body.progress !== undefined) data.progress = body.progress ?? null;
+    if (body.startDate !== undefined) data.startDate = body.startDate ? new Date(body.startDate) : undefined;
+    if (body.endDate !== undefined) data.endDate = body.endDate ? new Date(body.endDate) : null;
+
     const updated = await prisma.treatment.update({
       where: { id },
-      data: {
-        ...('title' in body ? { title: body.title } : {}),
-        ...('description' in body ? { description: body.description } : {}),
-        ...('progress' in body ? { progress: body.progress } : {}),
-        ...('startDate' in body ? { startDate: body.startDate ? new Date(body.startDate) : undefined } : {}),
-        ...('endDate' in body ? { endDate: body.endDate ? new Date(body.endDate) : null } : {})
-      }
+      data
     });
     return updated;
   });

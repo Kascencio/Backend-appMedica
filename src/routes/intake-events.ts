@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../plugins/prisma.js';
 import { parsePagination, buildMeta } from '../utils/pagination.js';
@@ -47,17 +47,17 @@ const router: FastifyPluginAsync = async (app) => {
 
     if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE'))) return res.code(403).send({ error: 'NO_ACCESS' });
 
-    const ev = await prisma.intakeEvent.create({
-      data: {
-        patientProfileId: body.patientProfileId,
-        kind: body.kind,
-        refId: body.refId,
-        scheduledFor: new Date(body.scheduledFor),
-        action: body.action,
-        at: body.at ? new Date(body.at) : undefined,
-        meta: body.meta ?? undefined
-      }
-    });
+    const data: any = {
+      patientProfileId: body.patientProfileId,
+      kind: body.kind,
+      refId: body.refId,
+      scheduledFor: new Date(body.scheduledFor),
+      action: body.action
+    };
+    if (body.at !== undefined) data.at = new Date(body.at);
+    if (body.meta !== undefined) data.meta = body.meta;
+
+    const ev = await prisma.intakeEvent.create({ data });
     return res.code(201).send(ev);
   });
 };
