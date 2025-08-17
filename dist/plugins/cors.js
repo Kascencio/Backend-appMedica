@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 import cors from '@fastify/cors';
-import { env } from '../env';
+import { env } from '../env.js';
 export default fp(async (app) => {
     const origins = (env.CORS_ORIGIN ?? '').split(',').map(s => s.trim()).filter(Boolean);
     await app.register(cors, {
