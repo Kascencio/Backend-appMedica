@@ -56,6 +56,7 @@ model User {
   patientProfile PatientProfile?
   caregiverPermissions Permission[] @relation("CaregiverPermissions")
   pushSubscriptions PushSubscription[]
+  caregiverProfile CaregiverProfile?
 }
 
 model PatientProfile {
@@ -203,4 +204,14 @@ model PushSubscription {
   auth         String
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id])
+}
+
+model CaregiverProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  name         String?
+  phone        String?
+  relationship String?
+  photoUrl     String?
 }

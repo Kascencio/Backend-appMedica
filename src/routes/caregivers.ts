@@ -49,6 +49,40 @@ const router: FastifyPluginAsync = async (app) => {
     });
     return perms.map(p => p.patientProfile);
   });
+
+  // Cuidador: obtener su información personal
+  app.get('/me', async (req: any, res) => {
+    if (req.user.role !== 'CAREGIVER') return res.code(403).send({ error: 'ONLY_CAREGIVER' });
+    const caregiver = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
+    if (!caregiver) return res.code(404).send({ error: 'NO_PROFILE' });
+    return caregiver;
+  });
+
+  // Cuidador: actualizar o crear su información personal
+  app.put('/me', async (req: any, res) => {
+    if (req.user.role !== 'CAREGIVER') return res.code(403).send({ error: 'ONLY_CAREGIVER' });
+    const body = z.object({
+      name: z.string().nullish(),
+      phone: z.string().nullish(),
+      relationship: z.string().nullish(),
+      photoUrl: z.string().url().nullish()
+    }).parse(req.body);
+
+    const existing = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
+    const data = {
+      name: body.name ?? null,
+      phone: body.phone ?? null,
+      relationship: body.relationship ?? null,
+      photoUrl: body.photoUrl ?? null,
+      userId: req.user.id
+    };
+    const updated = await prisma.caregiverProfile.upsert({
+      where: { id: existing?.id ?? '' },
+      create: data,
+      update: data
+    });
+    return updated;
+  });
 };
 
 export default router;
