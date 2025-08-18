@@ -9,7 +9,8 @@ const router: FastifyPluginAsync = async (app) => {
   app.get('/me', async (req: any, res) => {
     if (req.user.role !== 'PATIENT') return res.code(403).send({ error: 'ONLY_PATIENT' });
     const profile = await prisma.patientProfile.findFirst({ where: { userId: req.user.id } });
-    return profile;
+    if (!profile) return res.code(404).send({ error: 'NO_PROFILE' });
+    return { ...profile, role: 'PATIENT' };
   });
 
   // Upsert del perfil del paciente autenticado

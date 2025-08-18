@@ -44,6 +44,13 @@ const router: FastifyPluginAsync = async (app) => {
     const me = await prisma.user.findUnique({ where: { id: req.user.id }, select: { id: true, email: true, role: true } });
     return me;
   });
+
+  app.get('/caregiver/me', { onRequest: [app.auth] }, async (req: any, res) => {
+    if (req.user.role !== 'CAREGIVER') return res.code(403).send({ error: 'ONLY_CAREGIVER' });
+    const caregiver = await prisma.user.findUnique({ where: { id: req.user.id }, select: { id: true, email: true } });
+    if (!caregiver) return res.code(404).send({ error: 'NO_PROFILE' });
+    return { ...caregiver, role: 'CAREGIVER' };
+  });
 };
 
 export default router;
