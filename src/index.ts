@@ -4,7 +4,11 @@ import corsPlugin from './plugins/cors.js';
 import authPlugin from './plugins/auth.js';
 import errorsPlugin from './plugins/errors.js';
 import fastifyStatic from '@fastify/static';
+import { fileURLToPath } from 'url';
 import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import authRoutes from './routes/auth.js';
 import patientsRoutes from './routes/patients.js';
