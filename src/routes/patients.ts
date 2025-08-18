@@ -1,6 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../plugins/prisma.js';
+import multer from 'fastify-multer';
+import path from 'path';
+
+const upload = multer({ dest: path.join(__dirname, '../../uploads/') });
 
 const router: FastifyPluginAsync = async (app) => {
   app.addHook('onRequest', app.auth);
@@ -47,6 +51,21 @@ const router: FastifyPluginAsync = async (app) => {
       update: data
     });
     return updated;
+  });
+
+  // Subir foto de perfil del paciente autenticado
+  app.post('/me/photo', { preHandler: upload.single('photo') }, async (req: any, res) => {
+    if (req.user.role !== 'PATIENT') return res.code(403).send({ error: 'ONLY_PATIENT' });
+    const file = req.file;
+    if (!file) return res.code(400).send({ error: 'NO_FILE' });
+
+    // Guardar la ruta en la base de datos
+    const updated = await prisma.patientProfile.update({
+      where: { userId: req.user.id },
+      data: { photoUrl: `/uploads/${file.filename}` }
+    });
+
+    return { url: `/uploads/${file.filename}` };
   });
 };
 

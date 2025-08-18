@@ -3,6 +3,8 @@ import { env } from './env.js';
 import corsPlugin from './plugins/cors.js';
 import authPlugin from './plugins/auth.js';
 import errorsPlugin from './plugins/errors.js';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 
 import authRoutes from './routes/auth.js';
 import patientsRoutes from './routes/patients.js';
@@ -19,6 +21,10 @@ const app = Fastify({ logger: true });
 await app.register(errorsPlugin);
 await app.register(corsPlugin);
 await app.register(authPlugin);
+await app.register(fastifyStatic, {
+  root: path.join(__dirname, '../uploads'),
+  prefix: '/uploads/',
+});
 
 app.get('/health', async () => ({ ok: true }));
 
