@@ -47,6 +47,30 @@ enum IntakeAction {
   SKIPPED
 }
 
+enum NotificationType {
+  MEDICATION_REMINDER    // Recordatorio de medicamento
+  APPOINTMENT_REMINDER   // Recordatorio de cita
+  TREATMENT_UPDATE       // Actualización de tratamiento
+  EMERGENCY_ALERT        // Alerta de emergencia
+  SYSTEM_MESSAGE         // Mensaje del sistema
+  CAREGIVER_REQUEST      // Solicitud de cuidador
+  PERMISSION_UPDATE      // Actualización de permisos
+  GENERAL_INFO           // Información general
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
 model User {
   id            String          @id @default(cuid())
   email         String          @unique
@@ -57,13 +81,13 @@ model User {
   caregiverPermissions Permission[] @relation("CaregiverPermissions")
   pushSubscriptions PushSubscription[]
   caregiverProfile CaregiverProfile?
+  notifications Notification[]
 }
 
 model PatientProfile {
   id            String        @id @default(cuid())
   userId        String        @unique
   user          User          @relation(fields: [userId], references: [id])
-  name          String?
   
   // Información personal
   birthDate     DateTime?     // Fecha de nacimiento (reemplaza age)
@@ -246,4 +270,31 @@ model CaregiverProfile {
   
   // Foto
   photoUrl     String?
+}
+
+model Notification {
+  id          String             @id @default(cuid())
+  userId      String             // Usuario que recibe la notificación
+  user        User               @relation(fields: [userId], references: [id])
+  
+  // Contenido de la notificación
+  type        NotificationType
+  title       String
+  message     String
+  priority    NotificationPriority @default(MEDIUM)
+  status      NotificationStatus  @default(UNREAD)
+  
+  // Metadatos
+  metadata    Json?              // Datos adicionales (ej: patientId, medicationId, etc.)
+  scheduledFor DateTime?         // Cuándo debe mostrarse la notificación
+  readAt      DateTime?          // Cuándo fue leída
+  
+  // Timestamps
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  
+  // Índices para consultas eficientes
+  @@index([userId, status])
+  @@index([userId, type])
+  @@index([scheduledFor])
 }

@@ -19,6 +19,7 @@ import appointmentsRoutes from './routes/appointments.js';
 import treatmentsRoutes from './routes/treatments.js';
 import intakeRoutes from './routes/intake-events.js';
 import subscribeRoutes from './routes/subscribe.js';
+import notificationsRoutes from './routes/notifications.js';
 
 const app = Fastify({ logger: true });
 
@@ -41,6 +42,7 @@ app.register(appointmentsRoutes, { prefix: '/api/appointments' });
 app.register(treatmentsRoutes, { prefix: '/api/treatments' });
 app.register(intakeRoutes, { prefix: '/api/intake-events' });
 app.register(subscribeRoutes, { prefix: '/api' });
+app.register(notificationsRoutes, { prefix: '/api/notifications' });
 
 const port = Number(env.PORT);
 app.listen({ port, host: '0.0.0.0' }).catch((err) => {
