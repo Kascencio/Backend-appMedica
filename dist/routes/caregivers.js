@@ -45,6 +45,52 @@ const router = async (app) => {
         });
         return perms.map(p => p.patientProfile);
     });
+    // Cuidador: obtener su información personal
+    app.get('/me', async (req, res) => {
+        if (req.user.role !== 'CAREGIVER')
+            return res.code(403).send({ error: 'ONLY_CAREGIVER' });
+        const caregiver = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
+        if (!caregiver)
+            return res.code(404).send({ error: 'NO_PROFILE' });
+        return caregiver;
+    });
+    // Cuidador: actualizar o crear su información personal
+    app.put('/me', async (req, res) => {
+        if (req.user.role !== 'CAREGIVER')
+            return res.code(403).send({ error: 'ONLY_CAREGIVER' });
+        const body = z.object({
+            name: z.string().nullish(),
+            birthDate: z.string().datetime().nullish(),
+            gender: z.string().nullish(),
+            bloodType: z.string().nullish(),
+            phone: z.string().nullish(),
+            emergencyContactName: z.string().nullish(),
+            emergencyContactRelation: z.string().nullish(),
+            emergencyContactPhone: z.string().nullish(),
+            relationship: z.string().nullish(),
+            photoUrl: z.string().url().nullish()
+        }).parse(req.body);
+        const existing = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
+        const data = {
+            name: body.name ?? null,
+            birthDate: body.birthDate ? new Date(body.birthDate) : null,
+            gender: body.gender ?? null,
+            bloodType: body.bloodType ?? null,
+            phone: body.phone ?? null,
+            emergencyContactName: body.emergencyContactName ?? null,
+            emergencyContactRelation: body.emergencyContactRelation ?? null,
+            emergencyContactPhone: body.emergencyContactPhone ?? null,
+            relationship: body.relationship ?? null,
+            photoUrl: body.photoUrl ?? null,
+            userId: req.user.id
+        };
+        const updated = await prisma.caregiverProfile.upsert({
+            where: { id: existing?.id ?? '' },
+            create: data,
+            update: data
+        });
+        return updated;
+    });
 };
 export default router;
 //# sourceMappingURL=caregivers.js.map

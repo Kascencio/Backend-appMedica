@@ -1,7 +1,9 @@
 import { prisma } from '../plugins/prisma.js';
 export async function canAccessPatient(patientProfileId, user, level = 'READ') {
+    console.log('[canAccessPatient] patientProfileId:', patientProfileId, 'user:', user, 'level:', level);
     if (user.role === 'PATIENT') {
         const patient = await prisma.patientProfile.findUnique({ where: { id: patientProfileId }, select: { userId: true } });
+        console.log('[canAccessPatient] patient:', patient);
         return patient?.userId === user.id;
     }
     // CAREGIVER
@@ -9,8 +11,11 @@ export async function canAccessPatient(patientProfileId, user, level = 'READ') {
         where: { patientProfileId_caregiverId: { patientProfileId, caregiverId: user.id } },
         select: { status: true, level: true }
     });
-    if (!perm || perm.status !== 'ACCEPTED')
+    console.log('[canAccessPatient] permission:', perm);
+    if (!perm || perm.status !== 'ACCEPTED') {
+        console.log('[canAccessPatient] No permission or not ACCEPTED');
         return false;
+    }
     if (level === 'READ')
         return true;
     if (level === 'WRITE')
