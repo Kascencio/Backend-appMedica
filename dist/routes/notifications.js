@@ -3,6 +3,24 @@ import { prisma } from '../plugins/prisma.js';
 import { parsePagination, buildMeta } from '../utils/pagination.js';
 const router = async (app) => {
     app.addHook('onRequest', app.auth);
+    // Endpoint de prueba simple (sin autenticación)
+    app.get('/ping', async (req, res) => {
+        return {
+            message: "Sistema de notificaciones funcionando correctamente",
+            timestamp: new Date().toISOString(),
+            status: "success",
+            route: "/api/notifications/ping"
+        };
+    });
+    // Endpoint de prueba simple
+    app.get('/test', async (req, res) => {
+        return {
+            message: "Sistema de notificaciones funcionando correctamente",
+            timestamp: new Date().toISOString(),
+            user: req.user.id,
+            status: "success"
+        };
+    });
     // Obtener notificaciones del usuario autenticado
     app.get('/', async (req, res) => {
         const q = z.object({

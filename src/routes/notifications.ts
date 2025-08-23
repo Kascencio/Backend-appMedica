@@ -6,6 +6,26 @@ import { parsePagination, buildMeta } from '../utils/pagination.js';
 const router: FastifyPluginAsync = async (app) => {
   app.addHook('onRequest', app.auth);
 
+  // Endpoint de prueba simple (sin autenticación)
+  app.get('/ping', async (req: any, res) => {
+    return {
+      message: "Sistema de notificaciones funcionando correctamente",
+      timestamp: new Date().toISOString(),
+      status: "success",
+      route: "/api/notifications/ping"
+    };
+  });
+
+  // Endpoint de prueba simple
+  app.get('/test', async (req: any, res) => {
+    return {
+      message: "Sistema de notificaciones funcionando correctamente",
+      timestamp: new Date().toISOString(),
+      user: req.user.id,
+      status: "success"
+    };
+  });
+
   // Obtener notificaciones del usuario autenticado
   app.get('/', async (req: any, res) => {
     const q = z.object({
