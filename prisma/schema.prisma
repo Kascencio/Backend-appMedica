@@ -64,15 +64,33 @@ model PatientProfile {
   userId        String        @unique
   user          User          @relation(fields: [userId], references: [id])
   name          String?
-  age           Int?
+  
+  // Información personal
+  birthDate     DateTime?     // Fecha de nacimiento (reemplaza age)
+  gender        String?       // Sexo
   weight        Float?
   height        Float?
-  allergies     String?
-  reactions     String?
-  doctorName    String?
-  doctorContact String?
-  photoUrl      String?
+  bloodType     String?       // Tipo de sangre
+  
+  // Contacto de emergencia
+  emergencyContactName     String?
+  emergencyContactRelation String?
+  emergencyContactPhone    String?
+  
+  // Información médica
+  allergies     String?       // Alergias (alimentarias, medicamentosas, ambientales)
+  chronicDiseases          String?  // Enfermedades crónicas (diabetes, hipertensión, asma, epilepsia, etc.)
+  currentConditions        String?  // Padecimientos relevantes actuales
+  reactions     String?      // Reacciones (mantener por compatibilidad)
+  
+  // Información médica profesional
+  doctorName    String?       // Médico de cabecera o especialista
+  doctorContact String?       // Contacto del médico
+  hospitalReference String?   // Hospital / clínica de referencia
+  
+  photoUrl      String?       // Fotografía o avatar
 
+  // Relaciones
   medications   Medication[]
   medicationSchedules MedicationSchedule[]
   appointments  Appointment[]
@@ -210,8 +228,22 @@ model CaregiverProfile {
   id           String   @id @default(cuid())
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id])
+  
+  // Información personal
   name         String?
+  birthDate    DateTime?    // Fecha de nacimiento
+  gender       String?      // Sexo
+  bloodType    String?      // Tipo de sangre
+  
+  // Contacto
   phone        String?
+  emergencyContactName     String?    // Contacto de emergencia
+  emergencyContactRelation String?    // Relación del contacto de emergencia
+  emergencyContactPhone    String?    // Teléfono de emergencia
+  
+  // Relación con el paciente
   relationship String?
+  
+  // Foto
   photoUrl     String?
 }

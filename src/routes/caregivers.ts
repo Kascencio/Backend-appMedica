@@ -63,7 +63,13 @@ const router: FastifyPluginAsync = async (app) => {
     if (req.user.role !== 'CAREGIVER') return res.code(403).send({ error: 'ONLY_CAREGIVER' });
     const body = z.object({
       name: z.string().nullish(),
+      birthDate: z.string().datetime().nullish(),
+      gender: z.string().nullish(),
+      bloodType: z.string().nullish(),
       phone: z.string().nullish(),
+      emergencyContactName: z.string().nullish(),
+      emergencyContactRelation: z.string().nullish(),
+      emergencyContactPhone: z.string().nullish(),
       relationship: z.string().nullish(),
       photoUrl: z.string().url().nullish()
     }).parse(req.body);
@@ -71,7 +77,13 @@ const router: FastifyPluginAsync = async (app) => {
     const existing = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
     const data = {
       name: body.name ?? null,
+      birthDate: body.birthDate ? new Date(body.birthDate) : null,
+      gender: body.gender ?? null,
+      bloodType: body.bloodType ?? null,
       phone: body.phone ?? null,
+      emergencyContactName: body.emergencyContactName ?? null,
+      emergencyContactRelation: body.emergencyContactRelation ?? null,
+      emergencyContactPhone: body.emergencyContactPhone ?? null,
       relationship: body.relationship ?? null,
       photoUrl: body.photoUrl ?? null,
       userId: req.user.id
