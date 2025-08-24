@@ -76,6 +76,7 @@ model User {
   email         String          @unique
   passwordHash  String
   role          Role
+  name          String?         // Nombre completo del usuario
   createdAt     DateTime        @default(now())
   patientProfile PatientProfile?
   caregiverPermissions Permission[] @relation("CaregiverPermissions")
@@ -254,7 +255,7 @@ model CaregiverProfile {
   user         User     @relation(fields: [userId], references: [id])
   
   // Información personal
-  name         String?
+  // name se obtiene del User.name
   birthDate    DateTime?    // Fecha de nacimiento
   gender       String?      // Sexo
   bloodType    String?      // Tipo de sangre

@@ -15,7 +15,12 @@ const router = async (app) => {
         const profile = await prisma.patientProfile.findFirst({ where: { userId: req.user.id } });
         if (!profile)
             return res.code(404).send({ error: 'NO_PROFILE' });
-        return { ...profile, role: 'PATIENT' };
+        // Obtener el nombre del usuario
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { name: true }
+        });
+        return { ...profile, name: user?.name, role: 'PATIENT' };
     });
     // Upsert del perfil del paciente autenticado
     app.put('/me', async (req, res) => {
@@ -44,8 +49,14 @@ const router = async (app) => {
             photoUrl: z.string().url().nullish()
         }).parse(req.body);
         const existing = await prisma.patientProfile.findFirst({ where: { userId: req.user.id } });
+        // Si se proporciona un nombre, actualizar también el User
+        if (body.name !== undefined) {
+            await prisma.user.update({
+                where: { id: req.user.id },
+                data: { name: body.name }
+            });
+        }
         const data = {
-            name: body.name ?? null,
             birthDate: body.birthDate ? new Date(body.birthDate) : null,
             gender: body.gender ?? null,
             weight: body.weight ?? null,
@@ -72,7 +83,12 @@ const router = async (app) => {
             create: data,
             update: data
         });
-        return updated;
+        // Obtener el usuario actualizado para incluir el nombre
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { name: true }
+        });
+        return { ...updated, name: user?.name };
     });
     // Subir foto de perfil del paciente autenticado
     app.post('/me/photo', { preHandler: upload.single('photo') }, async (req, res) => {

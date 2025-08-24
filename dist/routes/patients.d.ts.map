@@ -1,1 +1,1 @@
-{"version":3,"file":"patients.d.ts","sourceRoot":"","sources":["../../src/routes/patients.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,SAAS,CAAC;AAYlD,QAAA,MAAM,MAAM,EAAE,kBA2Hb,CAAC;AAEF,eAAe,MAAM,CAAC"}
+{"version":3,"file":"patients.d.ts","sourceRoot":"","sources":["../../src/routes/patients.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,SAAS,CAAC;AAYlD,QAAA,MAAM,MAAM,EAAE,kBAkJb,CAAC;AAEF,eAAe,MAAM,CAAC"}

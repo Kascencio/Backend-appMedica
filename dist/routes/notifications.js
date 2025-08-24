@@ -57,7 +57,7 @@ const router = async (app) => {
             };
         }
         catch (error) {
-            app.log.error('Error en health check:', String(error));
+            app.log.error('Error en health check');
             return {
                 status: 'unhealthy',
                 timestamp: new Date().toISOString(),
@@ -135,7 +135,7 @@ const router = async (app) => {
             };
         }
         catch (error) {
-            app.log.error('Error obteniendo notificaciones:', String(error));
+            app.log.error('Error obteniendo notificaciones');
             return res.code(400).send({
                 error: 'INVALID_FILTERS',
                 message: 'Filtros de búsqueda inválidos',
@@ -199,7 +199,7 @@ const router = async (app) => {
             });
         }
         catch (error) {
-            app.log.error('Error creando notificación:', String(error));
+            app.log.error('Error creando notificación');
             if (error instanceof z.ZodError) {
                 return res.code(400).send({
                     error: 'VALIDATION_ERROR',
@@ -250,7 +250,7 @@ const router = async (app) => {
             return notification;
         }
         catch (error) {
-            app.log.error('Error obteniendo notificación:', String(error));
+            app.log.error('Error obteniendo notificación');
             return res.code(500).send({
                 error: 'INTERNAL_ERROR',
                 message: 'Error interno del servidor'
@@ -297,7 +297,7 @@ const router = async (app) => {
             };
         }
         catch (error) {
-            app.log.error('Error marcando notificación como leída:', String(error));
+            app.log.error('Error marcando notificación como leída');
             return res.code(500).send({
                 error: 'INTERNAL_ERROR',
                 message: 'Error interno del servidor'
@@ -341,7 +341,7 @@ const router = async (app) => {
             };
         }
         catch (error) {
-            app.log.error('Error archivando notificación:', String(error));
+            app.log.error('Error archivando notificación');
             return res.code(500).send({
                 error: 'INTERNAL_ERROR',
                 message: 'Error interno del servidor'
@@ -398,7 +398,7 @@ const router = async (app) => {
             };
         }
         catch (error) {
-            app.log.error('Error actualizando notificación:', String(error));
+            app.log.error('Error actualizando notificación');
             if (error instanceof z.ZodError) {
                 return res.code(400).send({
                     error: 'VALIDATION_ERROR',
@@ -437,7 +437,7 @@ const router = async (app) => {
             return res.code(204).send();
         }
         catch (error) {
-            app.log.error('Error eliminando notificación:', String(error));
+            app.log.error('Error eliminando notificación');
             return res.code(500).send({
                 error: 'INTERNAL_ERROR',
                 message: 'Error interno del servidor'
@@ -490,7 +490,7 @@ const router = async (app) => {
             return stats;
         }
         catch (error) {
-            app.log.error('Error obteniendo estadísticas:', String(error));
+            app.log.error('Error obteniendo estadísticas');
             return {
                 error: 'INTERNAL_ERROR',
                 message: 'Error obteniendo estadísticas'
@@ -541,7 +541,7 @@ const router = async (app) => {
             };
         }
         catch (error) {
-            app.log.error('Error en bulk read:', String(error));
+            app.log.error('Error en bulk read');
             if (error instanceof z.ZodError) {
                 return res.code(400).send({
                     error: 'VALIDATION_ERROR',
@@ -576,7 +576,7 @@ const router = async (app) => {
             };
         }
         catch (error) {
-            app.log.error('Error en cleanup:', String(error));
+            app.log.error('Error en cleanup');
             return res.code(500).send({
                 error: 'INTERNAL_ERROR',
                 message: 'Error durante la limpieza'

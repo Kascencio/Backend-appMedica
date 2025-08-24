@@ -55,7 +55,14 @@ const router: FastifyPluginAsync = async (app) => {
     if (req.user.role !== 'CAREGIVER') return res.code(403).send({ error: 'ONLY_CAREGIVER' });
     const caregiver = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
     if (!caregiver) return res.code(404).send({ error: 'NO_PROFILE' });
-    return caregiver;
+    
+    // Obtener el nombre del usuario
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { name: true }
+    });
+    
+    return { ...caregiver, name: user?.name };
   });
 
   // Cuidador: actualizar o crear su información personal
@@ -75,8 +82,16 @@ const router: FastifyPluginAsync = async (app) => {
     }).parse(req.body);
 
     const existing = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
+    
+    // Si se proporciona un nombre, actualizar también el User
+    if (body.name !== undefined) {
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { name: body.name }
+      });
+    }
+    
     const data = {
-      name: body.name ?? null,
       birthDate: body.birthDate ? new Date(body.birthDate) : null,
       gender: body.gender ?? null,
       bloodType: body.bloodType ?? null,
@@ -88,12 +103,20 @@ const router: FastifyPluginAsync = async (app) => {
       photoUrl: body.photoUrl ?? null,
       userId: req.user.id
     };
+    
     const updated = await prisma.caregiverProfile.upsert({
       where: { id: existing?.id ?? '' },
       create: data,
       update: data
     });
-    return updated;
+    
+    // Obtener el usuario actualizado para incluir el nombre
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { name: true }
+    });
+    
+    return { ...updated, name: user?.name };
   });
 };
 

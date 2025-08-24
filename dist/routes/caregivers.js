@@ -52,7 +52,12 @@ const router = async (app) => {
         const caregiver = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
         if (!caregiver)
             return res.code(404).send({ error: 'NO_PROFILE' });
-        return caregiver;
+        // Obtener el nombre del usuario
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { name: true }
+        });
+        return { ...caregiver, name: user?.name };
     });
     // Cuidador: actualizar o crear su información personal
     app.put('/me', async (req, res) => {
@@ -71,8 +76,14 @@ const router = async (app) => {
             photoUrl: z.string().url().nullish()
         }).parse(req.body);
         const existing = await prisma.caregiverProfile.findFirst({ where: { userId: req.user.id } });
+        // Si se proporciona un nombre, actualizar también el User
+        if (body.name !== undefined) {
+            await prisma.user.update({
+                where: { id: req.user.id },
+                data: { name: body.name }
+            });
+        }
         const data = {
-            name: body.name ?? null,
             birthDate: body.birthDate ? new Date(body.birthDate) : null,
             gender: body.gender ?? null,
             bloodType: body.bloodType ?? null,
@@ -89,7 +100,12 @@ const router = async (app) => {
             create: data,
             update: data
         });
-        return updated;
+        // Obtener el usuario actualizado para incluir el nombre
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { name: true }
+        });
+        return { ...updated, name: user?.name };
     });
 };
 export default router;
