@@ -417,7 +417,27 @@ DELETE /api/notifications/cleanup/old
 ### Ejemplo 1: Crear Recordatorio de Medicamento
 
 ```bash
-curl -X POST http://localhost:3000/api/notifications \
+# Usando el proxy (recomendado)
+curl -X POST https://www.recuerdamed.org/api/notifications \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "user_123",
+    "type": "MEDICATION_REMINDER",
+    "title": "Hora del medicamento",
+    "message": "Es momento de tomar tu Paracetamol 500mg",
+    "priority": "HIGH",
+    "metadata": {
+      "medicationId": "med_456",
+      "dosage": "500mg",
+      "time": "10:00 AM",
+      "frequency": "cada 8 horas"
+    },
+    "scheduledFor": "2024-01-15T10:00:00.000Z"
+  }'
+
+# O usando VPS directo
+curl -X POST http://72.60.30.129:3001/api/notifications \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -439,21 +459,21 @@ curl -X POST http://localhost:3000/api/notifications \
 ### Ejemplo 2: Obtener Notificaciones No Leídas de Alta Prioridad
 
 ```bash
-curl -X GET "http://localhost:3000/api/notifications?status=UNREAD&priority=HIGH&page=1&pageSize=20" \
+curl -X GET "http://72.60.30.129:3001/api/notifications?status=UNREAD&priority=HIGH&page=1&pageSize=20" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Ejemplo 3: Marcar Notificación como Leída
 
 ```bash
-curl -X PATCH http://localhost:3000/api/notifications/notif_123/read \
+curl -X PATCH http://72.60.30.129:3001/api/notifications/notif_123/read \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Ejemplo 4: Crear Alerta de Emergencia
 
 ```bash
-curl -X POST http://localhost:3000/api/notifications \
+curl -X POST http://72.60.30.129:3001/api/notifications \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -474,7 +494,7 @@ curl -X POST http://localhost:3000/api/notifications \
 ### Ejemplo 5: Recordatorio de Cita Médica
 
 ```bash
-curl -X POST http://localhost:3000/api/notifications \
+curl -X POST http://72.60.30.129:3001/api/notifications \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -496,7 +516,7 @@ curl -X POST http://localhost:3000/api/notifications \
 ### Ejemplo 6: Marcar Múltiples Notificaciones como Leídas
 
 ```bash
-curl -X PATCH http://localhost:3000/api/notifications/bulk/read \
+curl -X PATCH http://72.60.30.129:3001/api/notifications/bulk/read \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -507,14 +527,14 @@ curl -X PATCH http://localhost:3000/api/notifications/bulk/read \
 ### Ejemplo 7: Obtener Estadísticas
 
 ```bash
-curl -X GET http://localhost:3000/api/notifications/stats \
+curl -X GET http://72.60.30.129:3001/api/notifications/stats \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Ejemplo 8: Buscar Notificaciones por Texto
 
 ```bash
-curl -X GET "http://localhost:3000/api/notifications?search=paracetamol&status=UNREAD" \
+curl -X GET "http://72.60.30.129:3001/api/notifications?search=paracetamol&status=UNREAD" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -571,3 +591,117 @@ curl -X GET "http://localhost:3000/api/notifications?search=paracetamol&status=U
 
 **Versión de la API:** 1.0.0  
 **Última actualización:** Enero 2024
+
+## 🧪 Ejemplos Reales de Prueba
+
+### Paso 1: Obtener Token de Autenticación
+
+```bash
+# Registrar un nuevo usuario
+curl -X POST http://72.60.30.129:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "123456",
+    "role": "PATIENT"
+  }'
+
+# O hacer login con usuario existente
+curl -X POST http://72.60.30.129:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "123456"
+  }'
+```
+
+### Paso 2: Verificar el Sistema de Notificaciones
+
+```bash
+# Health check del sistema
+curl -X GET http://72.60.30.129:3001/api/notifications/health \
+  -H "Authorization: Bearer TU_TOKEN_AQUI"
+```
+
+### Paso 3: Crear y Gestionar Notificaciones
+
+```bash
+# Crear una notificación de prueba
+curl -X POST http://72.60.30.129:3001/api/notifications \
+  -H "Authorization: Bearer TU_TOKEN_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "TU_USER_ID",
+    "type": "MEDICATION_REMINDER",
+    "title": "Recordatorio de medicamento",
+    "message": "Es hora de tomar tu Paracetamol",
+    "priority": "HIGH",
+    "metadata": {
+      "medicationId": "med_123",
+      "dosage": "500mg"
+    }
+  }'
+
+# Obtener notificaciones del usuario
+curl -X GET "http://72.60.30.129:3001/api/notifications?status=UNREAD" \
+  -H "Authorization: Bearer TU_TOKEN_AQUI"
+
+# Obtener estadísticas
+curl -X GET http://72.60.30.129:3001/api/notifications/stats \
+  -H "Authorization: Bearer TU_TOKEN_AQUI"
+```
+
+### Respuestas Reales del Sistema
+
+**Health Check:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-08-30T16:41:34.220Z",
+  "totalNotifications": 0,
+  "message": "Sistema de notificaciones funcionando correctamente"
+}
+```
+
+**Crear Notificación:**
+```json
+{
+  "id": "cmeyhof6b0004jxnlyc5dj4d9",
+  "userId": "cmeyho0sw0000jxnl6gjxtjvx",
+  "type": "MEDICATION_REMINDER",
+  "title": "Recordatorio de medicamento",
+  "message": "Es hora de tomar tu Paracetamol",
+  "priority": "HIGH",
+  "status": "UNREAD",
+  "metadata": {
+    "dosage": "500mg",
+    "medicationId": "med_123"
+  },
+  "scheduledFor": null,
+  "readAt": null,
+  "createdAt": "2025-08-30T16:41:45.683Z",
+  "updatedAt": "2025-08-30T16:41:45.683Z"
+}
+```
+
+**Estadísticas:**
+```json
+{
+  "total": 1,
+  "unread": 0,
+  "read": 1,
+  "archived": 0,
+  "percentages": {
+    "unread": 0,
+    "read": 100,
+    "archived": 0
+  },
+  "byType": {
+    "MEDICATION_REMINDER": 1
+  },
+  "byPriority": {
+    "HIGH": 1
+  },
+  "lastUpdated": "2025-08-30T16:42:05.829Z"
+}
+```

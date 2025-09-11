@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,6 +5,216 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String             @id @default(cuid())
+  email                String             @unique
+  passwordHash         String
+  role                 Role
+  createdAt            DateTime           @default(now())
+  name                 String?
+  caregiverProfile     CaregiverProfile?
+  notifications        Notification[]
+  patientProfile       PatientProfile?
+  caregiverPermissions Permission[]       @relation("CaregiverPermissions")
+  pushSubscriptions    PushSubscription[]
+}
+
+model PatientProfile {
+  id                       String               @id @default(cuid())
+  userId                   String               @unique
+  weight                   Float?
+  height                   Float?
+  allergies                String?
+  reactions                String?
+  doctorName               String?
+  doctorContact            String?
+  photoUrl                 String?
+  birthDate                DateTime?
+  bloodType                String?
+  chronicDiseases          String?
+  currentConditions        String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  gender                   String?
+  hospitalReference        String?
+  appointments             Appointment[]
+  intakeEvents             IntakeEvent[]
+  inviteCodes              InviteCode[]
+  medications              Medication[]
+  medicationSchedules      MedicationSchedule[]
+  user                     User                 @relation(fields: [userId], references: [id])
+  permissions              Permission[]         @relation("PatientPermissions")
+  treatments               Treatment[]
+  treatmentReminders       TreatmentReminder[]
+}
+
+model Permission {
+  id               String           @id @default(cuid())
+  patientProfileId String
+  caregiverId      String
+  level            PermissionLevel  @default(READ)
+  status           PermissionStatus @default(PENDING)
+  caregiver        User             @relation("CaregiverPermissions", fields: [caregiverId], references: [id])
+  patientProfile   PatientProfile   @relation("PatientPermissions", fields: [patientProfileId], references: [id])
+
+  @@unique([patientProfileId, caregiverId])
+  @@index([caregiverId], map: "Permission_caregiverId_fkey")
+}
+
+model InviteCode {
+  id               String         @id @default(cuid())
+  patientProfileId String
+  code             String         @unique
+  expiresAt        DateTime
+  used             Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+
+  @@index([patientProfileId], map: "InviteCode_patientProfileId_fkey")
+}
+
+model Medication {
+  id               String               @id @default(cuid())
+  patientProfileId String
+  name             String
+  dosage           String?
+  type             String?
+  frequency        String
+  startDate        DateTime
+  endDate          DateTime?
+  notes            String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  patientProfile   PatientProfile       @relation(fields: [patientProfileId], references: [id])
+  schedules        MedicationSchedule[]
+
+  @@index([patientProfileId])
+}
+
+model MedicationSchedule {
+  id               String         @id @default(cuid())
+  patientProfileId String
+  medicationId     String
+  frequency        String
+  times            Json
+  daysOfWeek       Json?
+  customRule       Json?
+  timezone         String
+  medication       Medication     @relation(fields: [medicationId], references: [id])
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+
+  @@index([medicationId])
+  @@index([patientProfileId], map: "MedicationSchedule_patientProfileId_fkey")
+}
+
+model Treatment {
+  id               String              @id @default(cuid())
+  patientProfileId String
+  title            String
+  description      String?
+  startDate        DateTime
+  endDate          DateTime?
+  progress         String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  patientProfile   PatientProfile      @relation(fields: [patientProfileId], references: [id])
+  reminders        TreatmentReminder[]
+
+  @@index([patientProfileId], map: "Treatment_patientProfileId_fkey")
+}
+
+model TreatmentReminder {
+  id               String         @id @default(cuid())
+  patientProfileId String
+  treatmentId      String
+  frequency        String
+  times            Json
+  daysOfWeek       Json?
+  timezone         String
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+  treatment        Treatment      @relation(fields: [treatmentId], references: [id])
+
+  @@index([patientProfileId], map: "TreatmentReminder_patientProfileId_fkey")
+  @@index([treatmentId], map: "TreatmentReminder_treatmentId_fkey")
+}
+
+model Appointment {
+  id               String            @id @default(cuid())
+  patientProfileId String
+  title            String
+  description      String?
+  dateTime         DateTime
+  location         String?
+  status           AppointmentStatus @default(SCHEDULED)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  patientProfile   PatientProfile    @relation(fields: [patientProfileId], references: [id])
+
+  @@index([patientProfileId, dateTime])
+}
+
+model IntakeEvent {
+  id               String         @id @default(cuid())
+  kind             IntakeKind
+  refId            String
+  patientProfileId String
+  scheduledFor     DateTime
+  action           IntakeAction
+  at               DateTime       @default(now())
+  meta             Json?
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
+
+  @@index([patientProfileId, scheduledFor])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "PushSubscription_userId_fkey")
+}
+
+model CaregiverProfile {
+  id                       String    @id @default(cuid())
+  userId                   String    @unique
+  phone                    String?
+  relationship             String?
+  photoUrl                 String?
+  birthDate                DateTime?
+  bloodType                String?
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+  gender                   String?
+  user                     User      @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id           String               @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  message      String
+  priority     NotificationPriority @default(MEDIUM)
+  status       NotificationStatus   @default(UNREAD)
+  metadata     Json?
+  scheduledFor DateTime?
+  readAt       DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  user         User                 @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@index([userId, type])
+  @@index([scheduledFor])
 }
 
 enum Role {
@@ -48,14 +252,14 @@ enum IntakeAction {
 }
 
 enum NotificationType {
-  MEDICATION_REMINDER    // Recordatorio de medicamento
-  APPOINTMENT_REMINDER   // Recordatorio de cita
-  TREATMENT_UPDATE       // Actualización de tratamiento
-  EMERGENCY_ALERT        // Alerta de emergencia
-  SYSTEM_MESSAGE         // Mensaje del sistema
-  CAREGIVER_REQUEST      // Solicitud de cuidador
-  PERMISSION_UPDATE      // Actualización de permisos
-  GENERAL_INFO           // Información general
+  MEDICATION_REMINDER
+  APPOINTMENT_REMINDER
+  TREATMENT_UPDATE
+  EMERGENCY_ALERT
+  SYSTEM_MESSAGE
+  CAREGIVER_REQUEST
+  PERMISSION_UPDATE
+  GENERAL_INFO
 }
 
 enum NotificationPriority {
@@ -69,233 +273,4 @@ enum NotificationStatus {
   UNREAD
   READ
   ARCHIVED
-}
-
-model User {
-  id            String          @id @default(cuid())
-  email         String          @unique
-  passwordHash  String
-  role          Role
-  name          String?         // Nombre completo del usuario
-  createdAt     DateTime        @default(now())
-  patientProfile PatientProfile?
-  caregiverPermissions Permission[] @relation("CaregiverPermissions")
-  pushSubscriptions PushSubscription[]
-  caregiverProfile CaregiverProfile?
-  notifications Notification[]
-}
-
-model PatientProfile {
-  id            String        @id @default(cuid())
-  userId        String        @unique
-  user          User          @relation(fields: [userId], references: [id])
-  
-  // Información personal
-  birthDate     DateTime?     // Fecha de nacimiento (reemplaza age)
-  gender        String?       // Sexo
-  weight        Float?
-  height        Float?
-  bloodType     String?       // Tipo de sangre
-  
-  // Contacto de emergencia
-  emergencyContactName     String?
-  emergencyContactRelation String?
-  emergencyContactPhone    String?
-  
-  // Información médica
-  allergies     String?       // Alergias (alimentarias, medicamentosas, ambientales)
-  chronicDiseases          String?  // Enfermedades crónicas (diabetes, hipertensión, asma, epilepsia, etc.)
-  currentConditions        String?  // Padecimientos relevantes actuales
-  reactions     String?      // Reacciones (mantener por compatibilidad)
-  
-  // Información médica profesional
-  doctorName    String?       // Médico de cabecera o especialista
-  doctorContact String?       // Contacto del médico
-  hospitalReference String?   // Hospital / clínica de referencia
-  
-  photoUrl      String?       // Fotografía o avatar
-
-  // Relaciones
-  medications   Medication[]
-  medicationSchedules MedicationSchedule[]
-  appointments  Appointment[]
-  treatments    Treatment[]
-  treatmentReminders TreatmentReminder[]
-  permissions   Permission[]  @relation("PatientPermissions")
-  intakeEvents  IntakeEvent[]
-  inviteCodes   InviteCode[]
-}
-
-model Permission {
-  id               String            @id @default(cuid())
-  patientProfileId String
-  caregiverId      String
-  level            PermissionLevel   @default(READ)
-  status           PermissionStatus  @default(PENDING)
-
-  patientProfile   PatientProfile    @relation("PatientPermissions", fields: [patientProfileId], references: [id])
-  caregiver        User              @relation("CaregiverPermissions", fields: [caregiverId], references: [id])
-
-  @@unique([patientProfileId, caregiverId])
-}
-
-model InviteCode {
-  id               String   @id @default(cuid())
-  patientProfileId String
-  code             String   @unique
-  expiresAt        DateTime
-  used             Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
-}
-
-model Medication {
-  id               String   @id @default(cuid())
-  patientProfileId String
-  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
-  name             String
-  dosage           String?
-  type             String?
-  frequency        String   // "once"|"daily"|"weekly"|"custom"
-  startDate        DateTime
-  endDate          DateTime?
-  notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  schedules        MedicationSchedule[]
-
-  @@index([patientProfileId])
-}
-
-model MedicationSchedule {
-  id            String   @id @default(cuid())
-  patientProfileId String
-  medicationId  String
-  frequency     String
-  times         Json     // ["HH:mm", ...]
-  daysOfWeek    Json?    // [0..6]
-  customRule    Json?
-  timezone      String   // TZ para cálculos
-
-  medication    Medication     @relation(fields: [medicationId], references: [id])
-  patientProfile PatientProfile @relation(fields: [patientProfileId], references: [id])
-
-  @@index([medicationId])
-}
-
-model Treatment {
-  id               String   @id @default(cuid())
-  patientProfileId String
-  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
-  title            String
-  description      String?
-  startDate        DateTime
-  endDate          DateTime?
-  progress         String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  reminders        TreatmentReminder[]
-}
-
-model TreatmentReminder {
-  id               String   @id @default(cuid())
-  patientProfileId String
-  treatmentId      String
-  frequency        String
-  times            Json
-  daysOfWeek       Json?
-  timezone         String
-
-  treatment        Treatment      @relation(fields: [treatmentId], references: [id])
-  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
-}
-
-model Appointment {
-  id               String   @id @default(cuid())
-  patientProfileId String
-  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id])
-  title            String
-  description      String?
-  dateTime         DateTime
-  location         String?
-  status           AppointmentStatus @default(SCHEDULED)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@index([patientProfileId, dateTime])
-}
-
-model IntakeEvent {
-  id           String       @id @default(cuid())
-  kind         IntakeKind
-  refId        String       // medication.id o treatment.id
-  patientProfileId String
-  scheduledFor DateTime
-  action       IntakeAction
-  at           DateTime     @default(now())
-  meta         Json?
-  patientProfile PatientProfile @relation(fields: [patientProfileId], references: [id])
-
-  @@index([patientProfileId, scheduledFor])
-}
-
-model PushSubscription {
-  id           String   @id @default(cuid())
-  userId       String
-  endpoint     String   @unique
-  p256dh       String
-  auth         String
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id])
-}
-
-model CaregiverProfile {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  
-  // Información personal
-  // name se obtiene del User.name
-  birthDate    DateTime?    // Fecha de nacimiento
-  gender       String?      // Sexo
-  bloodType    String?      // Tipo de sangre
-  
-  // Contacto
-  phone        String?
-  emergencyContactName     String?    // Contacto de emergencia
-  emergencyContactRelation String?    // Relación del contacto de emergencia
-  emergencyContactPhone    String?    // Teléfono de emergencia
-  
-  // Relación con el paciente
-  relationship String?
-  
-  // Foto
-  photoUrl     String?
-}
-
-model Notification {
-  id          String             @id @default(cuid())
-  userId      String             // Usuario que recibe la notificación
-  user        User               @relation(fields: [userId], references: [id])
-  
-  // Contenido de la notificación
-  type        NotificationType
-  title       String
-  message     String
-  priority    NotificationPriority @default(MEDIUM)
-  status      NotificationStatus  @default(UNREAD)
-  
-  // Metadatos
-  metadata    Json?              // Datos adicionales (ej: patientId, medicationId, etc.)
-  scheduledFor DateTime?         // Cuándo debe mostrarse la notificación
-  readAt      DateTime?          // Cuándo fue leída
-  
-  // Timestamps
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  
-  // Índices para consultas eficientes
-  @@index([userId, status])
-  @@index([userId, type])
-  @@index([scheduledFor])
 }
