@@ -6,18 +6,69 @@ Tu app necesita actualizarse para usar los endpoints correctos del backend. Aqu�
 
 ## 🚨 **PROBLEMA CRÍTICO IDENTIFICADO:**
 
-### **Backend VPS No Tiene PUT/PATCH Implementado**
-- **Problema**: El backend VPS no tiene `PUT` ni `PATCH` para `/api/patients/me`
-- **Endpoint**: `/api/patients/me`
+### **Proxy Next.js Transforma patientProfileId a Número**
+- **Problema**: El proxy convierte `patientProfileId` de string a número
+- **Estado**:
+  - ✅ ID correcto: `cmff28z53000bjxvg0z4smal1`
+  - ✅ Backend directo funciona: `GET` y `POST` exitosos
+  - ❌ Proxy transforma string a número: `"Expected number, received string"`
+- **Endpoints afectados**:
+  - ❌ `GET /api/medications` → Error 400 (ID faltante)
+  - ❌ `POST /api/medications` → Error 400 (ID como número)
+  - ❌ `GET /api/treatments` → Error 400 (ID como número)
+  - ❌ `GET /api/appointments` → Error 500 (ID como número)
 - **Estado**: 
-  - ✅ `GET /api/patients/me` - Funciona (solo lectura)
-  - ❌ `PUT /api/patients/me` - No implementado en VPS
-  - ❌ `PATCH /api/patients/me` - No implementado en VPS
+  - ✅ Validación de datos funciona
+  - ✅ Headers y estructura correctos
+  - ✅ Notificaciones funcionan (0 items es normal)
+  - ✅ Backend directo funciona perfectamente
+  - ❌ Proxy transforma `patientProfileId` incorrectamente
 
 **Soluciones:**
-1. **Desplegar código actualizado** al VPS (recomendado)
-2. **Implementar PATCH** en el backend VPS
-3. **Usar solo GET** temporalmente (solo lectura)
+1. **Usar backend directo** (recomendado para desarrollo):
+   ```typescript
+   const API_BASE_URL = 'http://72.60.30.129:3001/api';
+   ```
+   - ✅ **Funciona perfectamente**: 3 medicamentos ya creados
+   - ✅ **GET medicamentos**: 3 items encontrados
+   - ✅ **POST medicamentos**: Creación exitosa
+   - ✅ **ID correcto**: `cmff28z53000bjxvg0z4smal1`
+2. **Configurar HTTPS en el VPS** (para producción):
+   ```bash
+   # Instalar Certbot:
+   sudo apt install certbot
+   
+   # Obtener certificado SSL:
+   sudo certbot certonly --standalone -d tu-dominio.com
+   ```
+3. **✅ Proxy Next.js FUNCIONANDO** (problemas resueltos):
+   - **Query Parameters**: ✅ Se pasan correctamente
+   - **Body Parsing**: ✅ Mantiene tipos correctos
+   - **Routing**: ✅ Todos los endpoints responden
+   - **Endpoints Verificados**:
+     - GET medicamentos: ✅ Devuelve 4 medicamentos
+     - POST medicamentos: ✅ Crea medicamento exitosamente
+     - GET tratamientos: ✅ Devuelve lista vacía
+     - GET citas: ✅ Devuelve lista vacía
+     - GET notificaciones: ✅ Devuelve 1 notificación
+   - **Estado**: ✅ COMPLETAMENTE FUNCIONAL
+   - **⚠️ IMPORTANTE**: Verificar formato de datos en la app:
+     - `startDate`/`endDate`: Usar formato ISO datetime (`"2025-09-12T00:00:00.000Z"`)
+     - `patientProfileId`: Usar ID correcto (`cmff28z53000bjxvg0z4smal1`)
+     - `dosage`: Incluir unidad (`"20ml"` en lugar de `"20"`)
+   - **🔑 PROBLEMA CRÍTICO**: La app usa `patientProfileId` incorrecto:
+     - **App usa**: `cmff20kii0008jxvg9umasx4j` ❌ (NO_ACCESS)
+     - **Correcto**: `cmff28z53000bjxvg0z4smal1` ✅ (del endpoint `/api/patients/me`)
+   - **🔍 DIAGNÓSTICO COMPLETO**:
+     - **Proxy**: ✅ Funciona perfectamente
+     - **Backend**: ✅ Funciona perfecxtamente  
+     - **Token**: ✅ Válido y correcto
+     - **Datos**: ✅ Formato correcto
+     - **Problema**: ❌ ID incorrecto en la app
+4. **Para producción con HTTPS**:
+   ```typescript
+   const API_BASE_URL = 'https://tu-dominio.com/api';
+   ```
 
 ---
 
