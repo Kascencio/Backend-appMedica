@@ -112,20 +112,33 @@ model MedicationSchedule {
 }
 
 model Treatment {
-  id               String              @id @default(cuid())
+  id               String                    @id @default(cuid())
   patientProfileId String
-  medicamento      String?
   title            String
   description      String?
   startDate        DateTime
   endDate          DateTime?
   progress         String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  patientProfile   PatientProfile      @relation(fields: [patientProfileId], references: [id])
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  patientProfile   PatientProfile            @relation(fields: [patientProfileId], references: [id])
   reminders        TreatmentReminder[]
+  medications      TreatmentMedication[]
 
   @@index([patientProfileId], map: "Treatment_patientProfileId_fkey")
+}
+
+model TreatmentMedication {
+  id          String    @id @default(cuid())
+  treatmentId String
+  name        String
+  dosage      String?
+  type        String?
+  frequency   String?
+  notes       String?
+  treatment   Treatment @relation(fields: [treatmentId], references: [id], onDelete: Cascade)
+
+  @@index([treatmentId])
 }
 
 model TreatmentReminder {
