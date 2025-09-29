@@ -62,25 +62,26 @@ const router: FastifyPluginAsync = async (app) => {
     if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE'))) return res.code(403).send({ error: 'NO_ACCESS' });
 
     const created = await prisma.$transaction(async (tx) => {
-      const trt = await tx.treatment.create({
-        data: {
-          patientProfileId: body.patientProfileId,
-          title: body.title,
-          description: body.description ?? null,
-          startDate: new Date(body.startDate),
-          endDate: body.endDate ? new Date(body.endDate) : null,
-          progress: body.progress ?? null,
-          medications: body.medications ? {
-            create: body.medications.map(med => ({
-              name: med.name,
-              dosage: med.dosage ?? null,
-              type: med.type ?? null,
-              frequency: med.frequency ?? null,
-              notes: med.notes ?? null
-            }))
-          } : undefined
-        }
-      });
+      const createData: any = {
+        patientProfileId: body.patientProfileId,
+        title: body.title,
+        description: body.description ?? null,
+        startDate: new Date(body.startDate),
+        endDate: body.endDate ? new Date(body.endDate) : null,
+        progress: body.progress ?? null
+      };
+      if (body.medications && body.medications.length) {
+        createData.medications = {
+          create: body.medications.map((med: any) => ({
+            name: med.name,
+            dosage: med.dosage ?? null,
+            type: med.type ?? null,
+            frequency: med.frequency ?? null,
+            notes: med.notes ?? null
+          }))
+        };
+      }
+      const trt = await tx.treatment.create({ data: createData });
       if (body.reminders) {
         for (const r of body.reminders) {
           await tx.treatmentReminder.create({
@@ -146,15 +147,16 @@ const router: FastifyPluginAsync = async (app) => {
     if (!(await canAccessPatient(patientProfileId, req.user, 'WRITE'))) 
       return res.code(403).send({ error: 'NO_ACCESS' });
 
+    const medUpdateData: any = {};
+    if (body.name !== undefined) medUpdateData.name = body.name;
+    if (body.dosage !== undefined) medUpdateData.dosage = body.dosage ?? null;
+    if (body.type !== undefined) medUpdateData.type = body.type ?? null;
+    if (body.frequency !== undefined) medUpdateData.frequency = body.frequency ?? null;
+    if (body.notes !== undefined) medUpdateData.notes = body.notes ?? null;
+
     const medication = await prisma.treatmentMedication.update({
       where: { id: medicationId },
-      data: {
-        name: body.name,
-        dosage: body.dosage,
-        type: body.type,
-        frequency: body.frequency,
-        notes: body.notes
-      }
+      data: medUpdateData
     });
     return medication;
   });

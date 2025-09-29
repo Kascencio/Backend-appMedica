@@ -1,1 +1,1 @@
-{"version":3,"file":"treatments.d.ts","sourceRoot":"","sources":["../../src/routes/treatments.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,SAAS,CAAC;AAMlD,QAAA,MAAM,MAAM,EAAE,kBAmHb,CAAC;AAEF,eAAe,MAAM,CAAC"}
+{"version":3,"file":"treatments.d.ts","sourceRoot":"","sources":["../../src/routes/treatments.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,SAAS,CAAC;AAelD,QAAA,MAAM,MAAM,EAAE,kBAuMb,CAAC;AAEF,eAAe,MAAM,CAAC"}

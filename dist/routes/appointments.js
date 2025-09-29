@@ -40,17 +40,20 @@ const router = async (app) => {
             description: z.string().optional(),
             dateTime: z.string().datetime(),
             location: z.string().optional(),
+            specialty: z.string().optional(),
             status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED']).optional()
         }).parse(req.body);
         if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE')))
             return res.code(403).send({ error: 'NO_ACCESS' });
         const created = await prisma.appointment.create({
+            // cast to any because Prisma client types may need regeneration after schema changes
             data: {
                 patientProfileId: body.patientProfileId,
                 title: body.title,
                 description: body.description ?? null,
                 dateTime: new Date(body.dateTime),
                 location: body.location ?? null,
+                specialty: body.specialty ?? null,
                 status: body.status ?? 'SCHEDULED'
             }
         });
@@ -64,6 +67,7 @@ const router = async (app) => {
             description: z.string().optional(),
             dateTime: z.string().datetime().optional(),
             location: z.string().optional(),
+            specialty: z.string().optional(),
             status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED']).optional()
         }).parse(req.body);
         if (!(await canAccessPatient(body.patientProfileId, req.user, 'WRITE')))
@@ -75,13 +79,15 @@ const router = async (app) => {
             data.description = body.description ?? null;
         if (body.location !== undefined)
             data.location = body.location ?? null;
+        if (body.specialty !== undefined)
+            data.specialty = body.specialty ?? null;
         if (body.status !== undefined)
             data.status = body.status;
         if (body.dateTime !== undefined)
             data.dateTime = new Date(body.dateTime);
         const updated = await prisma.appointment.update({
             where: { id },
-            data
+            data: data
         });
         return updated;
     });

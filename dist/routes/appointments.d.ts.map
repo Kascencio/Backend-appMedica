@@ -1,1 +1,1 @@
-{"version":3,"file":"appointments.d.ts","sourceRoot":"","sources":["../../src/routes/appointments.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,SAAS,CAAC;AAMlD,QAAA,MAAM,MAAM,EAAE,kBA2Fb,CAAC;AAEF,eAAe,MAAM,CAAC"}
+{"version":3,"file":"appointments.d.ts","sourceRoot":"","sources":["../../src/routes/appointments.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,kBAAkB,EAAE,MAAM,SAAS,CAAC;AAMlD,QAAA,MAAM,MAAM,EAAE,kBAgGb,CAAC;AAEF,eAAe,MAAM,CAAC"}
