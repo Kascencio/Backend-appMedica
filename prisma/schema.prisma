@@ -163,6 +163,7 @@ model Appointment {
   description      String?
   dateTime         DateTime
   location         String?
+  specialty        String?        
   status           AppointmentStatus @default(SCHEDULED)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt

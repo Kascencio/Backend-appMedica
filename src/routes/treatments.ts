@@ -4,6 +4,15 @@ import { prisma } from '../plugins/prisma.js';
 import { parsePagination, buildMeta } from '../utils/pagination.js';
 import { canAccessPatient } from '../utils/permissions.js';
 
+// Esquemas de validación para medicamentos
+const medicationSchema = z.object({
+  name: z.string(),
+  dosage: z.string().optional(),
+  type: z.string().optional(),
+  frequency: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 const router: FastifyPluginAsync = async (app) => {
   app.addHook('onRequest', app.auth);
 
@@ -41,6 +50,7 @@ const router: FastifyPluginAsync = async (app) => {
       startDate: z.string().datetime(),
       endDate: z.string().datetime().nullable().optional(),
       progress: z.string().optional(),
+      medications: z.array(medicationSchema).optional(),
       reminders: z.array(z.object({
         frequency: z.string(),
         times: z.array(z.string().regex(/^\d{2}:\d{2}$/)),
@@ -59,7 +69,16 @@ const router: FastifyPluginAsync = async (app) => {
           description: body.description ?? null,
           startDate: new Date(body.startDate),
           endDate: body.endDate ? new Date(body.endDate) : null,
-          progress: body.progress ?? null
+          progress: body.progress ?? null,
+          medications: body.medications ? {
+            create: body.medications.map(med => ({
+              name: med.name,
+              dosage: med.dosage ?? null,
+              type: med.type ?? null,
+              frequency: med.frequency ?? null,
+              notes: med.notes ?? null
+            }))
+          } : undefined
         }
       });
       if (body.reminders) {
@@ -80,6 +99,78 @@ const router: FastifyPluginAsync = async (app) => {
     });
 
     return res.code(201).send(created);
+  });
+
+  // Obtener medicamentos de un tratamiento
+  app.get('/:id/medications', async (req: any, res) => {
+    const { id } = req.params as { id: string };
+    const { patientProfileId } = z.object({ patientProfileId: z.string() }).parse(req.query);
+    
+    if (!(await canAccessPatient(patientProfileId, req.user, 'READ'))) 
+      return res.code(403).send({ error: 'NO_ACCESS' });
+
+    const medications = await prisma.treatmentMedication.findMany({
+      where: { treatmentId: id }
+    });
+    return medications;
+  });
+
+  // Agregar medicamento a un tratamiento
+  app.post('/:id/medications', async (req: any, res) => {
+    const { id } = req.params as { id: string };
+    const { patientProfileId } = z.object({ patientProfileId: z.string() }).parse(req.query);
+    const body = medicationSchema.parse(req.body);
+
+    if (!(await canAccessPatient(patientProfileId, req.user, 'WRITE'))) 
+      return res.code(403).send({ error: 'NO_ACCESS' });
+
+    const medication = await prisma.treatmentMedication.create({
+      data: {
+        treatmentId: id,
+        name: body.name,
+        dosage: body.dosage ?? null,
+        type: body.type ?? null,
+        frequency: body.frequency ?? null,
+        notes: body.notes ?? null
+      }
+    });
+    return res.code(201).send(medication);
+  });
+
+  // Actualizar medicamento
+  app.patch('/:treatmentId/medications/:medicationId', async (req: any, res) => {
+    const { treatmentId, medicationId } = req.params as { treatmentId: string; medicationId: string };
+    const { patientProfileId } = z.object({ patientProfileId: z.string() }).parse(req.query);
+    const body = medicationSchema.partial().parse(req.body);
+
+    if (!(await canAccessPatient(patientProfileId, req.user, 'WRITE'))) 
+      return res.code(403).send({ error: 'NO_ACCESS' });
+
+    const medication = await prisma.treatmentMedication.update({
+      where: { id: medicationId },
+      data: {
+        name: body.name,
+        dosage: body.dosage,
+        type: body.type,
+        frequency: body.frequency,
+        notes: body.notes
+      }
+    });
+    return medication;
+  });
+
+  // Eliminar medicamento
+  app.delete('/:treatmentId/medications/:medicationId', async (req: any, res) => {
+    const { treatmentId, medicationId } = req.params as { treatmentId: string; medicationId: string };
+    const { patientProfileId } = z.object({ patientProfileId: z.string() }).parse(req.query);
+
+    if (!(await canAccessPatient(patientProfileId, req.user, 'WRITE'))) 
+      return res.code(403).send({ error: 'NO_ACCESS' });
+
+    await prisma.treatmentMedication.delete({
+      where: { id: medicationId }
+    });
+    return res.code(204).send();
   });
 
   app.patch('/:id', async (req: any, res) => {
